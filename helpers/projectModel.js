@@ -11,11 +11,13 @@ module.exports = {
         const promises = [query, this.getProjectActions(id)]; // [ projects, actions ]
   
         return Promise.all(promises).then(function(results) {
-          let [project, actions] = results;
+         let [project, actions] = results;
+        //  let project = results[0];
+        //  let actions = results[1];
           if (!project) return null;
           project.actions = actions;
   
-          return mappers.projectToBody(project);
+          return project;
         });
       }
   
