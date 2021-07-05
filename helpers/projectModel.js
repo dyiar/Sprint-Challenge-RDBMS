@@ -1,0 +1,50 @@
+const db = require('../dbconfig')
+const mappers = require('./mappers')
+
+module.exports = {
+    get: function(id) {
+      let query = db('projects as p');
+  
+      if (id) {
+        query.where('p.id', id).first();
+  
+        const promises = [query, this.getProjectActions(id)]; // [ projects, actions ]
+  
+        return Promise.all(promises).then(function(results) {
+         let [project, actions] = results;
+        //  let project = results[0];
+        //  let actions = results[1];
+          if (!project) return null;
+          project.actions = actions;
+  
+          return project;
+        });
+      }
+  
+      return query.then(projects => {
+        return projects.map(project => mappers.projectToBody(project));
+      });
+    },
+    getProjectActions: function(projectId) {
+      return db.select('actions.id', 'actions.description', 'actions.notes', 'actions.completed').from('actions').innerJoin('projects', 'projects.id', '=', 'actions.project_id')
+        .where('project_id', projectId)
+        .then(actions => actions.map(action => mappers.actionToBody(action)));
+    },
+    insert: function(project) {
+      return db('projects')
+        .insert(project)
+        .then(([id]) => this.get(id));
+    },
+    update: function(id, changes) {
+      return db('projects')
+        .where('id', id)
+        .update(changes)
+        .then(count => (count > 0 ? this.get(id) : null));
+    },
+    remove: function(id) {
+      return db('projects')
+        .where('id', id)
+        .del();
+    },
+  };
+  
